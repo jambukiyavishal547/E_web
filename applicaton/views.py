@@ -9,8 +9,8 @@ from drf_spectacular.utils import extend_schema
 class StudentApiView(viewsets.ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
-    authentication_classes = [UsernamePasswordAuthentication]
-    permission_classes = [IsAdminUser]
+    # authentication_classes = [UsernamePasswordAuthentication]
+    # permission_classes = [IsAdminUser]
 
     @extend_schema(
         responses={
