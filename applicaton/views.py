@@ -1,47 +1,51 @@
+from rest_framework import viewsets, status
+from rest_framework.response import Response
 from .models import Student
 from .serializers import StudentSerializer
-from rest_framework import viewsets
-# Create your views here.
-
-from rest_framework.response import Response
-from rest_framework import status
+from .authentication import UsernamePasswordAuthentication
+from .permissions import IsAdminUser
 from drf_spectacular.utils import extend_schema
 
 class StudentApiView(viewsets.ModelViewSet):
-        queryset=Student.objects.all()
-        serializer_class=StudentSerializer
-        #list
-        @extend_schema(
-            responses={
-                status.HTTP_200_OK:  {
-                    'description': 'List Of Student ',
-                    'example' : {
-                            'id': 1,
-                            'name': 'vishal',
-                            'age': 21,
-                            'gender': "M",
-                            "is_active":True,
-                            "created_at": "2024-06-03",
-                            "update_at": "2024-06-03"
-                        }
-                    }
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+    authentication_classes = [UsernamePasswordAuthentication]
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(
+        responses={
+            status.HTTP_200_OK: {
+                'description': 'List Of Students',
+                'example': {
+                    'id': 1,
+                    'name': 'demo',
+                    'pwd':'password',
+                    'age': 0,
+                    'gender': 'M',
+                    'is_active': True,
+                    'created_at': '2024-06-03',
+                    'updated_at': '2024-06-03'
                 }
-        )
-        def list(self, request):
-            """
-            Your view's docstring here.
-            """
-            student = Student.objects.first ()
-            serializer = StudentSerializer(student)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        #create
-        example = {
-            'id': 1,
-            'name': 'vishal',
-            'age': 21,
-            'gender': "M"
+            }
         }
-        @extend_schema(
+    )
+    def list(self, request):
+        """
+        List all students.
+        """
+        students = Student.objects.all()
+        serializer = StudentSerializer(students, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    example = {
+        'name': 'demo',
+        'password':"password",
+        'age': 0,
+        'gender': 'M',
+        'is_active': True
+    }
+
+    @extend_schema(
         request={"application/json": {'example': example, 'description': 'Student object to be created'}},
         responses={
             status.HTTP_201_CREATED: {
@@ -49,73 +53,68 @@ class StudentApiView(viewsets.ModelViewSet):
                 'example': example
             }
         }
-        )
-        def create(self, request):
-            """
-            Create a new object .
-            """
-            serializer = StudentSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        #update
-        @extend_schema(
-            request=StudentSerializer,
-            responses={
-                status.HTTP_200_OK: StudentSerializer,
-                status.HTTP_204_NO_CONTENT: None,
-            }
-        )
-        def update(self, request, pk):
-            """
-            Update an existing object.
-            """
-            try:
-                instance = Student.objects.get(pk=pk)
-            except Student.DoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+    )
+    def create(self, request):
+        """
+        Create a new student.
+        """
+        serializer = StudentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            serializer = StudentSerializer(instance, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        #delete
-        @extend_schema(
-            responses={
-                status.HTTP_200_OK:  {
-                    'description': 'Object deleted ',
-                    'example' : {
-                            'Result':'Object deleted ',
-                            'id': 1
-                        }
-                    },
-                status.HTTP_202_ACCEPTED: { 
-                    'description': 'Give Only Id Of Object Like',
-                    'example' : {
-                    'description': 'Give Only Id Of Object ',
-                            'id': 1,
-                        }},
-                status.HTTP_204_NO_CONTENT: {
-                    'description': 'Give Id ',
-                    'example' : {
-                    'description': 'Input Somthing Like  ',
-                            'id': 1,
-                        }
-                    }
+    @extend_schema(
+        request={"application/json": {'example': example, 'description': 'Student object to be updated'}},
+        responses={
+            status.HTTP_200_OK: {
+                'description': 'Student updated successfully',
+                'example': {
+                    'id': 1,
+                    'name': 'demo',
+                    "password":"password",
+                    'age': 0,
+                    'gender': 'M',
+                    'is_active': True,
+                    'created_at': '2024-06-03',
+                    'updated_at': '2024-06-03'
+                }
             }
-        )
-        def destroy(self, request, pk):
-            """
-            Delete an existing object.
-            """
-            try:
-                instance = Student.objects.get(pk=pk)
-            except Student.DoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+        }
+    )
+    def update(self, request, pk=None, partial=False):
+        """
+        Update an existing student.
+        """
+        try:
+            instance = Student.objects.get(pk=pk)
+        except Student.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-            instance.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer = StudentSerializer(instance, data=request.data, partial=partial)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={
+            status.HTTP_204_NO_CONTENT: {
+                'description': 'Student deleted successfully',
+                'example': {
+                    'id': 1
+                }
+            }
+        }
+    )
+    def destroy(self, request, pk=None):
+        """
+        Delete a student.
+        """
+        try:
+            instance = Student.objects.get(pk=pk)
+        except Student.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
